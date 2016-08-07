@@ -1,0 +1,60 @@
+---
+- hosts: mentorbot
+  become: yes
+
+  vars_prompt:
+  - name: "gh_user" 
+    prompt: "Enter GitHub username"
+  - name: "gh_pass"
+    prompt: "Enter GitHub password"
+
+  tasks:
+  - name: Manually update packages list
+    apt: update_cache=yes
+
+  - name: Install packages
+    apt: name={{ item }} state=latest
+    with_items:
+    - make
+    - build-essential
+    - libexpat1-dev
+    - zlib1g-dev
+    - libxml2-dev
+    - git
+
+  - name: Download cpanminus
+    get_url: url=http://cpanmin.us
+             dest=/tmp/cpanm.pl
+             mode=755
+
+  - name: Install cpanminus
+    command: perl cpanm.pl App::cpanminus
+    args:
+      chdir: /tmp/
+      creates: /usr/local/bin/cpanm
+
+  - name: Install bot
+    cpanm: name=Bot::BasicBot::Pluggable
+
+  - name: Generate SSH key
+    user: name=ubuntu generate_ssh_key=yes
+
+  - shell: cat /home/ubuntu/.ssh/id_rsa.pub
+    register: pub_key
+
+  - name: Upload SSH key to GitHub
+    uri:
+      url: https://api.github.com/user/keys
+      method: POST
+      body_format: json
+      body: "{ \"key\": \"{{ pub_key.stdout }}\"}"
+      user: "{{ gh_user }}"
+      password: "{{ gh_pass }}"
+      force_basic_auth: yes
+      status_code: 201,422
+
+  - name: Clone Mentorbot project
+    become_user: ubuntu
+    git: repo=git@github.com:zendoodles/mentorbot.git
+         dest=/home/ubuntu/mentorbot
+         accept_hostkey=true
