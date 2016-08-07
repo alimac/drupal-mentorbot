@@ -25,7 +25,7 @@
   - name: Download cpanminus
     get_url: url=http://cpanmin.us
              dest=/tmp/cpanm.pl
-             mode=755
+             mode=0755
 
   - name: Install cpanminus
     command: perl cpanm.pl App::cpanminus
@@ -58,3 +58,12 @@
     git: repo=git@github.com:zendoodles/mentorbot.git
          dest=/home/ubuntu/mentorbot
          accept_hostkey=true
+         update=no
+
+  - name: Create startup script
+    copy: src=files/mentorbot.init
+          dest=/etc/init.d/mentorbot
+          mode=0755
+
+  - name: Start mentorbot
+    service: name=mentorbot enabled=yes state=started
