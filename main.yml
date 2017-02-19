@@ -1,9 +1,10 @@
 ---
 - hosts: mentorbot
+  remote_user: ubuntu
   become: yes
 
   vars_prompt:
-  - name: "gh_user" 
+  - name: "gh_user"
     prompt: "Enter GitHub username"
   - name: "gh_pass"
     prompt: "Enter GitHub password"
